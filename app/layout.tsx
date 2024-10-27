@@ -1,22 +1,22 @@
-import './globals.css';
+import "@/app/globals.css";
+import type { Metadata } from "next";
+import type React from "react";
 
-import { Analytics } from '@vercel/analytics/react';
-
-export const metadata = {
-  title: 'Next.js App Router + NextAuth + Tailwind CSS',
-  description:
-    'A user admin dashboard configured with Next.js, Postgres, NextAuth, Tailwind CSS, TypeScript, and Prettier.'
+export const metadata: Metadata = {
+	title: {
+		template: "%s - Catalyst",
+		default: "Catalyst",
+	},
+	description: "",
 };
 
-export default function RootLayout({
-  children
-}: {
-  children: React.ReactNode;
-}) {
-  return (
-    <html lang="en">
-      <body className="flex min-h-screen w-full flex-col">{children}</body>
-      <Analytics />
-    </html>
-  );
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+	return (
+		<html
+			lang="en"
+			className="text-zinc-950 antialiased lg:bg-zinc-100 dark:bg-zinc-900 dark:text-white dark:lg:bg-zinc-950"
+		>
+			<body>{children}</body>
+		</html>
+	);
 }
