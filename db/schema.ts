@@ -1,5 +1,6 @@
-import { pgTable, serial, text, timestamp } from "drizzle-orm/pg-core";
+import { boolean, integer, pgTable, primaryKey, text, timestamp } from "drizzle-orm/pg-core";
 import { drizzle } from "drizzle-orm/postgres-js";
+import type { AdapterAccountType } from "next-auth/adapters";
 import postgres from "postgres";
 
 const pool = postgres(process.env.DATABASE_URL!, { max: 1 });
@@ -7,7 +8,9 @@ const pool = postgres(process.env.DATABASE_URL!, { max: 1 });
 export const db = drizzle(pool);
 
 export const users = pgTable("users", {
-	id: serial("id").primaryKey(),
+	id: text("id")
+		.primaryKey()
+		.$defaultFn(() => crypto.randomUUID()),
 	authId: text("authId"),
 	authSource: text("authSource"),
 	name: text("name"),
@@ -17,59 +20,61 @@ export const users = pgTable("users", {
 	username: text("username"),
 	phoneNumber: text("phoneNumber"),
 	image: text("image"),
-	emailVerified: timestamp("emailVerified").notNull(),
+	emailVerified: timestamp("emailVerified", { mode: "date" }),
 	createdAt: timestamp("created_at").notNull().defaultNow(),
 	updatedAt: timestamp("updated_at")
 		.notNull()
 		.$onUpdate(() => new Date()),
 });
 
-export const accounts = pgTable("accounts", {
-	id: serial("id").primaryKey(),
-	userId: text("userId")
-		.notNull()
-		.references(() => users.id, { onDelete: "cascade" }),
-	idToken: text("id_token"),
-	type: text("type"),
-	provider: text("provider"),
-	providerAccountId: text("providerAccountId"),
-	refresh_token: text("refresh_token"),
-	access_token: text("access_token"),
-	token_type: text("token_type"),
-	scope: text("scope"),
-	sessionState: text("session_state"),
-	oauthToken_secret: text("oauth_token_secret"),
-	oauthToken: text("oauth_token"),
-	expiresAt: timestamp("expires_at").notNull(),
-	createdAt: timestamp("created_at").notNull().defaultNow(),
-	updatedAt: timestamp("updated_at")
-		.notNull()
-		.$onUpdate(() => new Date()),
-});
+export const accounts = pgTable(
+	"accounts",
+	{
+		userId: text("userId")
+			.notNull()
+			.references(() => users.id, { onDelete: "cascade" }),
+		type: text("type").$type<AdapterAccountType>().notNull(),
+		provider: text("provider").notNull(),
+		providerAccountId: text("providerAccountId").notNull(),
+		refresh_token: text("refresh_token"),
+		access_token: text("access_token"),
+		expires_at: integer("expires_at"),
+		token_type: text("token_type"),
+		scope: text("scope"),
+		id_token: text("id_token"),
+		session_state: text("session_state"),
+		createdAt: timestamp("created_at").notNull().defaultNow(),
+		updatedAt: timestamp("updated_at")
+			.notNull()
+			.$onUpdate(() => new Date()),
+	},
+	(account) => ({
+		compoundKey: primaryKey({
+			columns: [account.provider, account.providerAccountId],
+		}),
+	}),
+);
 
-export const sessions = pgTable("sessions", {
-	id: serial("id").primaryKey(),
-	sessionToken: text("sessionToken"),
-	userId: text("userId")
-		.notNull()
-		.references(() => users.id, { onDelete: "cascade" }),
-	expiresAt: timestamp("expires_at").notNull(),
-	createdAt: timestamp("created_at").notNull().defaultNow(),
-	updatedAt: timestamp("updated_at")
-		.notNull()
-		.$onUpdate(() => new Date()),
-});
-
-export const tokens = pgTable("tokens", {
-	id: serial("id").primaryKey(),
-	identifier: text("identifier"),
-	token: text("token").unique(),
-	expiresAt: timestamp("expires_at").notNull(),
-	createdAt: timestamp("created_at").notNull().defaultNow(),
-	updatedAt: timestamp("updated_at")
-		.notNull()
-		.$onUpdate(() => new Date()),
-});
+export const authenticators = pgTable(
+	"authenticators",
+	{
+		credentialID: text("credentialID").notNull().unique(),
+		userId: text("userId")
+			.notNull()
+			.references(() => users.id, { onDelete: "cascade" }),
+		providerAccountId: text("providerAccountId").notNull(),
+		credentialPublicKey: text("credentialPublicKey").notNull(),
+		counter: integer("counter").notNull(),
+		credentialDeviceType: text("credentialDeviceType").notNull(),
+		credentialBackedUp: boolean("credentialBackedUp").notNull(),
+		transports: text("transports"),
+	},
+	(authenticator) => ({
+		compositePK: primaryKey({
+			columns: [authenticator.userId, authenticator.credentialID],
+		}),
+	}),
+);
 
 export type InsertUser = typeof users.$inferInsert;
 export type SelectUser = typeof users.$inferSelect;
@@ -77,8 +82,5 @@ export type SelectUser = typeof users.$inferSelect;
 export type InsertAccount = typeof accounts.$inferInsert;
 export type SelectAccount = typeof accounts.$inferSelect;
 
-export type InsertSession = typeof sessions.$inferInsert;
-export type SelectSession = typeof sessions.$inferSelect;
-
-export type InsertToken = typeof tokens.$inferInsert;
-export type SelectToken = typeof tokens.$inferSelect;
+export type InsertAuthenticator = typeof authenticators.$inferInsert;
+export type SelectAuthenticator = typeof authenticators.$inferSelect;
