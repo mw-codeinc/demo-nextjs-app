@@ -1,5 +1,6 @@
 // @ts-nocheck
 
+import { GoogleSignInButton } from "@/components/google-signin-button";
 import { Avatar } from "@/components/tailwindui/avatar";
 import { Badge } from "@/components/tailwindui/badge";
 import { Divider } from "@/components/tailwindui/divider";
@@ -83,7 +84,8 @@ export default async function Home() {
 				</div>
 			</div>
 			<div>
-				<SignInWithGoogle />
+				{/* <SignInWithGoogle /> */}
+				<GoogleSignInButton />
 			</div>
 			<div className="mt-4 grid gap-8 sm:grid-cols-2 xl:grid-cols-4">
 				<Stat title="Total revenue" value="$2.6M" change="+4.5%" />
