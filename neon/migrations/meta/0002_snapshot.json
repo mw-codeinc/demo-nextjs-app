@@ -1,6 +1,6 @@
 {
-  "id": "622291f6-1ed0-4a93-b423-d1ee1037c8cd",
-  "prevId": "00000000-0000-0000-0000-000000000000",
+  "id": "1ee887e5-eea4-4b56-8bf2-4b09dfa30d6c",
+  "prevId": "2570bd42-538d-468a-9795-45e39ffb14e7",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -19,6 +19,12 @@
           "type": "integer",
           "primaryKey": false,
           "notNull": true
+        },
+        "username": {
+          "name": "username",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
         },
         "provider": {
           "name": "provider",

@@ -1,5 +1,6 @@
 // @ts-nocheck
 
+import { CampaignModal } from "@/components/campaign-modal";
 import { GoogleSignInButton } from "@/components/google-signin-button";
 import { Avatar } from "@/components/tailwindui/avatar";
 import { Badge } from "@/components/tailwindui/badge";
@@ -14,33 +15,9 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/tailwindui/table";
+import { getSearchAnalytics } from "@/data/google";
 import { getEvents, getRecentOrders } from "@/lib/data";
 import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
-
-export function SignInWithGoogle() {
-	const clientId = process.env.GOOGLE_CLIENT_ID;
-	const redirectUri = process.env.GOOGLE_REDIRECT_URI;
-
-	const scopes = [
-		// Google Analytics Scopes
-		"https://www.googleapis.com/auth/analytics",
-
-		// Google Search Console Scopes
-		"https://www.googleapis.com/auth/webmasters",
-	];
-
-	const oauthUrl = `https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=${encodeURIComponent(
-		clientId,
-	)}&redirect_uri=${encodeURIComponent(
-		redirectUri,
-	)}&scope=${encodeURIComponent(scopes.join(" "))}&access_type=offline&prompt=consent`;
-
-	return (
-		<div>
-			<a href={oauthUrl}>Sign in with Google</a>
-		</div>
-	);
-}
 
 export function Stat({ title, value, change }) {
 	return (
@@ -56,18 +33,13 @@ export function Stat({ title, value, change }) {
 	);
 }
 
-// async function getApiResponse(): Promise<any> {
-// 	const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}`);
-// 	return await res.json();
-// }
-
 export default async function Home() {
 	let orders = await getRecentOrders();
 	let events = await getEvents();
 	const { getUser } = getKindeServerSession();
 	const user = await getUser();
 
-	// const apiResponse = await getApiResponse();
+	const searchAnalytics = await getSearchAnalytics("https://ammaze.io");
 
 	return (
 		<>
@@ -84,8 +56,10 @@ export default async function Home() {
 				</div>
 			</div>
 			<div>
-				{/* <SignInWithGoogle /> */}
 				<GoogleSignInButton />
+			</div>
+			<div>
+				<CampaignModal />
 			</div>
 			<div className="mt-4 grid gap-8 sm:grid-cols-2 xl:grid-cols-4">
 				<Stat title="Total revenue" value="$2.6M" change="+4.5%" />
