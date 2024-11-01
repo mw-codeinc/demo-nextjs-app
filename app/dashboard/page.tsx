@@ -15,7 +15,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/tailwindui/table";
-import { getSearchAnalytics } from "@/data/google";
+import { getAnalyticsProperties, getSearchAnalytics } from "@/data/google";
 import { getEvents, getRecentOrders } from "@/lib/data";
 import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
 
@@ -40,6 +40,7 @@ export default async function Home() {
 	const user = await getUser();
 
 	const searchAnalytics = await getSearchAnalytics("https://ammaze.io");
+	const analyticsData = await getAnalyticsProperties();
 
 	return (
 		<>

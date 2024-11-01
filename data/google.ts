@@ -6,6 +6,44 @@ import { google } from "googleapis";
 import { NextResponse } from "next/server";
 import "server-only";
 
+export async function getAccountSummaries(): Promise<any[] | null> {
+	const CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
+	const CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
+
+	try {
+		const { getUser } = getKindeServerSession();
+		const _user = await getUser();
+		const dbUser = await db.select().from(users).where(eq(users.authId, _user.id));
+		const user = dbUser[0];
+		const dbIntegration = await db
+			.select()
+			.from(integrations)
+			.where(eq(integrations.userId, user.id));
+		const integration = dbIntegration[0];
+
+		const oauth2Client = new google.auth.OAuth2(CLIENT_ID, CLIENT_SECRET);
+
+		oauth2Client.setCredentials({
+			access_token: integration.accessToken,
+			refresh_token: integration.refreshToken,
+		});
+
+		const analyticsAdmin = google.analyticsadmin({ version: "v1beta", auth: oauth2Client });
+
+		const result = await analyticsAdmin.accountSummaries.list();
+
+		if (!result.data.accountSummaries) {
+			console.log("No data found for this site");
+			return null;
+		}
+
+		return result.data.accountSummaries;
+	} catch (error) {
+		console.log("Error fetching data from Google Analytics Admin API", error);
+		return null;
+	}
+}
+
 export async function getSearchAnalytics(url: string): Promise<any> {
 	const CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 	const CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
@@ -77,6 +115,49 @@ export async function getSearchAnalytics(url: string): Promise<any> {
 			clicks: totalClicks,
 			position: averagePosition,
 		};
+	} catch (error) {
+		console.log("Error fetching data from Google Search Console API", error);
+		return null;
+	}
+}
+
+export async function getAnalyticsProperties(): Promise<any> {
+	const CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
+	const CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
+
+	try {
+		const { getUser } = getKindeServerSession();
+		const _user = await getUser();
+		const dbUser = await db.select().from(users).where(eq(users.authId, _user.id));
+		const user = dbUser[0];
+		const dbIntegration = await db
+			.select()
+			.from(integrations)
+			.where(eq(integrations.userId, user.id));
+		const integration = dbIntegration[0];
+
+		const _accountSummaries = await getAccountSummaries();
+		// @ts-ignore
+		const accountSummaries = _accountSummaries[0].propertySummaries[0];
+
+		const oauth2Client = new google.auth.OAuth2(CLIENT_ID, CLIENT_SECRET);
+
+		oauth2Client.setCredentials({
+			access_token: integration.accessToken,
+			refresh_token: integration.refreshToken,
+		});
+
+		const analyticsAdmin = google.analyticsadmin({ version: "v1beta", auth: oauth2Client });
+		const result = await analyticsAdmin.properties.list({
+			filter: `parent:${accountSummaries.parent}`,
+		});
+
+		if (!result.data.properties || result.data.properties.length === 0) {
+			console.log("No data found for this site");
+			return null;
+		}
+
+		return result.data.properties;
 	} catch (error) {
 		console.log("Error fetching data from Google Search Console API", error);
 		return null;
